@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  inference:
+    build: ./service_inference
+    ports:
+      - "8001:8001"
+
+  preprocessing:
+    build: ./service_preprocessing
+    ports:
+      - "8002:8002"
+
+  results:
+    build: ./service_results
+    ports:
+      - "8003:8003"

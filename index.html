@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MediScan — Détection d'anomalies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0d12;
+    --bg-card: #111520;
+    --bg-card2: #161b28;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --text: #f0f2f7;
+    --text-muted: #6b7591;
+    --text-sub: #9aa3bf;
+    --accent: #3b7fff;
+    --accent-glow: rgba(59,127,255,0.18);
+    --green: #22c97a;
+    --green-bg: rgba(34,201,122,0.1);
+    --green-border: rgba(34,201,122,0.25);
+    --red: #f05a5a;
+    --red-bg: rgba(240,90,90,0.1);
+    --red-border: rgba(240,90,90,0.25);
+    --amber: #f0a030;
+    --amber-bg: rgba(240,160,48,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 60px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,13,18,0.85);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .nav-logo-icon {
+    width: 30px;
+    height: 30px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-sub);
+    font-family: var(--mono);
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .nav-tag {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  /* MAIN */
+  main {
+    flex: 1;
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .page-sub {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border-hover); }
+  .stat-icon {
+    width: 38px; height: 38px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .stat-icon svg { width: 18px; height: 18px; }
+  .stat-icon.blue { background: var(--accent-glow); }
+  .stat-icon.blue svg { stroke: var(--accent); }
+  .stat-icon.green { background: var(--green-bg); }
+  .stat-icon.green svg { stroke: var(--green); }
+  .stat-icon.amber { background: var(--amber-bg); }
+  .stat-icon.amber svg { stroke: var(--amber); }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
+  .stat-value { font-size: 20px; font-weight: 600; font-family: var(--mono); color: var(--text); }
+
+  /* GRID */
+  .grid-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border-hover); }
+  .card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .card-title svg { width: 14px; height: 14px; stroke: var(--text-muted); }
+  .card-body { padding: 1.25rem; }
+
+  /* UPLOAD */
+  .drop-zone {
+    border: 1.5px dashed var(--border-hover);
+    border-radius: var(--radius);
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-icon {
+    width: 48px; height: 48px;
+    background: var(--bg-card2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    border: 1px solid var(--border);
+  }
+  .drop-icon svg { width: 22px; height: 22px; stroke: var(--accent); }
+  .drop-text { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .drop-sub { font-size: 12px; color: var(--text-muted); }
+
+  .preview-box {
+    display: none;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .preview-box img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+  .preview-name {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.7);
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-sub);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-top: 12px;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn svg { width: 15px; height: 15px; stroke: white; }
+
+  .btn-secondary {
+    background: var(--bg-card2);
+    color: var(--text-sub);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    padding: 7px 14px;
+    width: auto;
+    margin-top: 0;
+  }
+  .btn-secondary:hover { border-color: var(--border-hover); opacity: 1; }
+
+  /* RESULT */
+  .result-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    gap: 10px;
+  }
+  .result-empty svg { width: 36px; height: 36px; stroke: var(--text-muted); opacity: 0.4; }
+  .result-empty p { font-size: 13px; color: var(--text-muted); }
+
+  .result-content { display: none; }
+
+  .result-badge {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.25rem;
+    border: 1px solid;
+  }
+  .result-badge.normal { background: var(--green-bg); border-color: var(--green-border); }
+  .result-badge.anomalie { background: var(--red-bg); border-color: var(--red-border); }
+  .result-badge-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .result-badge.normal .result-badge-icon { background: rgba(34,201,122,0.15); }
+  .result-badge.anomalie .result-badge-icon { background: rgba(240,90,90,0.15); }
+  .result-badge-icon svg { width: 22px; height: 22px; }
+  .result-badge.normal .result-badge-icon svg { stroke: var(--green); }
+  .result-badge.anomalie .result-badge-icon svg { stroke: var(--red); }
+  .result-label { font-size: 18px; font-weight: 600; font-family: var(--mono); }
+  .result-badge.normal .result-label { color: var(--green); }
+  .result-badge.anomalie .result-label { color: var(--red); }
+  .result-conf { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .bar-row { margin-bottom: 14px; }
+  .bar-info {
+    display: flex; justify-content: space-between;
+    font-size: 13px; margin-bottom: 6px;
+  }
+  .bar-info span:first-child { color: var(--text-sub); }
+  .bar-info span:last-child { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .bar-track {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .bar-fill.normal { background: var(--green); }
+  .bar-fill.anomalie { background: var(--red); }
+
+  .save-btn-row { margin-top: 16px; display: flex; gap: 8px; }
+
+  /* LOADING */
+  .loading-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(10,13,18,0.8);
+    backdrop-filter: blur(4px);
+    border-radius: var(--radius);
+    z-index: 10;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--text-sub); font-family: var(--mono); }
+
+  /* HISTORY TABLE */
+  .history-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .history-card .card-header { justify-content: space-between; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+  }
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+  td.mono { font-family: var(--mono); font-size: 12px; color: var(--text-sub); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--mono);
+    border: 1px solid;
+  }
+  .badge.normal { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .badge.anomalie { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .empty-history {
+    padding: 3rem;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* SERVICES STATUS */
+  .services-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .service-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .service-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .service-dot.ok { background: var(--green); box-shadow: 0 0 5px var(--green); }
+  .service-dot.error { background: var(--red); }
+  .service-name { font-size: 12px; font-family: var(--mono); color: var(--text-sub); }
+  .service-port { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+
+  /* RELATIVE */
+  .rel { position: relative; }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: var(--bg-card2);
+    border: 1px solid var(--border-hover);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 999;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.25s;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+  #toast.success svg { stroke: var(--green); }
+  #toast.error svg { stroke: var(--red); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 4v4l3 3-3 3v4a8 8 0 1 1 0-14z"/>
+      </svg>
+    </div>
+    MediScan
+  </div>
+  <div class="nav-status">
+    <div class="status-dot">
+      <span class="dot"></span>
+      Système actif
+    </div>
+    <span class="nav-tag">Systèmes Répartis — P8</span>
+  </div>
+</nav>
+
+<main>
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Détection d'anomalies</h1>
+      <p class="page-sub">Analyse de radiographies thoraciques par apprentissage profond</p>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
+        </svg>
+      </div>
+      <div>
+        <div class="stat-label">Analyses totales</div>
+        <div class="stat-value" id="stat-total">0</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div>
+        <div class="stat-label">Cas normaux</div>
+        <div class="stat-value" id="stat-normal">0</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div>
+        <div class="stat-label">Anomalies détectées</div>
+        <div class="stat-value" id="stat-anomalie">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD + RESULT -->
+  <div class="grid-two">
+
+    <!-- UPLOAD -->
+    <div class="card rel">
+      <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">Analyse en cours…</div>
+      </div>
+      <div class="card-header">
+        <span class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Radiographie
+        </span>
+      </div>
+      <div class="card-body">
+        <div id="preview-box" class="preview-box">
+          <img id="preview-img" src="" alt="Aperçu" />
+          <div class="preview-name" id="preview-name"></div>
+          <button onclick="resetUpload()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.18);color:white;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit;">✕ Changer</button>
+        </div>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept="image/*" />
+          <div class="drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="drop-text">Glisser une image ici</div>
+          <div class="drop-sub">ou cliquer pour parcourir · JPEG, PNG</div>
+        </div>
+        <button class="btn" id="analyze-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Analyser la radiographie
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Résultat
+        </span>
+      </div>
+      <div class="card-body">
+
+        <div class="result-empty" id="result-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Aucune analyse effectuée.<br>Uploadez une image pour commencer.</p>
+        </div>
+
+        <div class="result-content" id="result-content">
+          <div class="result-badge" id="result-badge">
+            <div class="result-badge-icon">
+              <svg id="result-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+            </div>
+            <div>
+              <div class="result-label" id="result-label">—</div>
+              <div class="result-conf" id="result-conf">—</div>
+            </div>
+          </div>
+
+          <div class="bar-row">
+            <div class="bar-info">
+              <span>Normal</span>
+              <span id="bar-normal-val">—</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill normal" id="bar-normal" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="bar-row">
+            <div class="bar-info">
+              <span>Anomalie</span>
+              <span id="bar-anomalie-val">—</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill anomalie" id="bar-anomalie" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="save-btn-row">
+            <button class="btn" id="save-btn" style="flex:1;">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Sauvegarder
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SERVICES STATUS -->
+  <div class="services-row">
+    <div class="service-item">
+      <div class="service-dot" id="dot-inference"></div>
+      <div class="service-name">inference</div>
+      <div class="service-port">:8001</div>
+    </div>
+    <div class="service-item">
+      <div class="service-dot" id="dot-preprocessing"></div>
+      <div class="service-name">preprocessing</div>
+      <div class="service-port">:8002</div>
+    </div>
+    <div class="service-item">
+      <div class="service-dot" id="dot-results"></div>
+      <div class="service-name">results</div>
+      <div class="service-port">:8003</div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-card">
+    <div class="card-header">
+      <span class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
+        Historique des analyses
+      </span>
+      <button class="btn btn-secondary" onclick="loadHistory()">Actualiser</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fichier</th>
+            <th>Résultat</th>
+            <th>Confiance</th>
+            <th>Horodatage</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+          <tr><td colspan="4" class="empty-history">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="toast-icon"></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+  const API = {
+    inference: 'http://localhost:8001',
+    preprocessing: 'http://localhost:8002',
+    results: 'http://localhost:8003',
+  };
+
+  let currentFile = null;
+  let currentResult = null;
+
+  // ---- FILE INPUT ----
+  const fileInput = document.getElementById('file-input');
+  const dropZone = document.getElementById('drop-zone');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const previewBox = document.getElementById('preview-box');
+  const previewImg = document.getElementById('preview-img');
+  const previewName = document.getElementById('preview-name');
+
+  fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file) return;
+    currentFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImg.src = e.target.result;
+      previewName.textContent = file.name;
+      previewBox.style.display = 'block';
+      dropZone.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    analyzeBtn.disabled = false;
+    resetResult();
+  }
+
+  function resetUpload() {
+    currentFile = null;
+    fileInput.value = '';
+    previewBox.style.display = 'none';
+    dropZone.style.display = 'block';
+    analyzeBtn.disabled = true;
+    resetResult();
+  }
+
+  // ---- ANALYZE ----
+  analyzeBtn.addEventListener('click', async () => {
+    if (!currentFile) return;
+    showLoading('Analyse en cours…');
+    try {
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      const res = await fetch(`${API.inference}/predict`, { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Erreur service inference');
+      const data = await res.json();
+      currentResult = { ...data, filename: currentFile.name };
+      showResult(data);
+      toast('Analyse terminée', 'success');
+    } catch (err) {
+      toast('Impossible de contacter le service inference', 'error');
+    } finally {
+      hideLoading();
+    }
+  });
+
+  function showResult(data) {
+    document.getElementById('result-empty').style.display = 'none';
+    const content = document.getElementById('result-content');
+    content.style.display = 'block';
+
+    const isNormal = data.prediction === 'NORMAL';
+    const conf = data.confidence;
+    const normConf = isNormal ? conf : (100 - conf);
+    const anomConf = isNormal ? (100 - conf) : conf;
+
+    const badge = document.getElementById('result-badge');
+    badge.className = 'result-badge ' + (isNormal ? 'normal' : 'anomalie');
+
+    const icon = document.getElementById('result-icon');
+    if (isNormal) {
+      icon.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';
+    } else {
+      icon.innerHTML = '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+    }
+
+    document.getElementById('result-label').textContent = data.prediction;
+    document.getElementById('result-conf').textContent = `Confiance : ${conf.toFixed(2)}%`;
+    document.getElementById('bar-normal-val').textContent = normConf.toFixed(1) + '%';
+    document.getElementById('bar-anomalie-val').textContent = anomConf.toFixed(1) + '%';
+
+    setTimeout(() => {
+      document.getElementById('bar-normal').style.width = normConf + '%';
+      document.getElementById('bar-anomalie').style.width = anomConf + '%';
+    }, 50);
+  }
+
+  function resetResult() {
+    document.getElementById('result-empty').style.display = 'flex';
+    document.getElementById('result-content').style.display = 'none';
+    document.getElementById('bar-normal').style.width = '0%';
+    document.getElementById('bar-anomalie').style.width = '0%';
+    currentResult = null;
+  }
+
+  // ---- SAVE ----
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    if (!currentResult) return;
+    try {
+      const res = await fetch(`${API.results}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: currentResult.filename,
+          prediction: currentResult.prediction,
+          confidence: currentResult.confidence,
+        })
+      });
+      if (!res.ok) throw new Error();
+      toast('Résultat sauvegardé', 'success');
+      loadHistory();
+    } catch {
+      toast('Erreur lors de la sauvegarde', 'error');
+    }
+  });
+
+  // ---- HISTORY ----
+  async function loadHistory() {
+    const tbody = document.getElementById('history-body');
+    try {
+      const res = await fetch(`${API.results}/results`);
+      const data = await res.json();
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-history">Aucune analyse sauvegardée</td></tr>';
+        updateStats([]);
+        return;
+      }
+      tbody.innerHTML = data.slice().reverse().map(r => `
+        <tr>
+          <td class="mono">${escHtml(r.filename)}</td>
+          <td><span class="badge ${r.prediction.toLowerCase()}">${r.prediction}</span></td>
+          <td class="mono">${Number(r.confidence).toFixed(2)}%</td>
+          <td class="mono">${formatDate(r.timestamp)}</td>
+        </tr>
+      `).join('');
+      updateStats(data);
+    } catch {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-history">Impossible de charger l\'historique</td></tr>';
+    }
+  }
+
+  function updateStats(data) {
+    document.getElementById('stat-total').textContent = data.length;
+    document.getElementById('stat-normal').textContent = data.filter(r => r.prediction === 'NORMAL').length;
+    document.getElementById('stat-anomalie').textContent = data.filter(r => r.prediction === 'ANOMALIE').length;
+  }
+
+  function formatDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ---- HEALTH ----
+  async function checkHealth() {
+    const services = [
+      { key: 'inference', port: 8001, dotId: 'dot-inference' },
+      { key: 'preprocessing', port: 8002, dotId: 'dot-preprocessing' },
+      { key: 'results', port: 8003, dotId: 'dot-results' },
+    ];
+    for (const s of services) {
+      try {
+        const r = await fetch(`http://localhost:${s.port}/health`, { signal: AbortSignal.timeout(2000) });
+        const dot = document.getElementById(s.dotId);
+        dot.className = r.ok ? 'service-dot ok' : 'service-dot error';
+      } catch {
+        document.getElementById(s.dotId).className = 'service-dot error';
+      }
+    }
+  }
+
+  // ---- LOADING ----
+  function showLoading(msg) {
+    document.getElementById('loading-text').textContent = msg;
+    document.getElementById('loading').classList.add('show');
+    analyzeBtn.disabled = true;
+  }
+  function hideLoading() {
+    document.getElementById('loading').classList.remove('show');
+    analyzeBtn.disabled = false;
+  }
+
+  // ---- TOAST ----
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    const icon = document.getElementById('toast-icon');
+    el.className = 'show ' + type;
+    document.getElementById('toast-msg').textContent = msg;
+    icon.innerHTML = type === 'success'
+      ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
+      : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+    setTimeout(() => el.className = type, 3000);
+  }
+
+  // ---- INIT ----
+  checkHealth();
+  loadHistory();
+  setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>
