@@ -1,5 +1,7 @@
 # Medical Anomaly Detection
 
+Malak El Filali/ Nour Khamalli
+
 This project detects anomalies in chest X-ray images using a deep learning model.
 It is built as a small microservice application with FastAPI and Docker.
 
